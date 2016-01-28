@@ -1,0 +1,6 @@
+#!/bin/bash
+
+OUTPUT="$(which java)"
+RUN=`$OUTPUT Driver`
+echo $RUN
+

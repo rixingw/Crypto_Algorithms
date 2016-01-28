@@ -1,0 +1,3 @@
+#! /bin/ksh
+/usr/bin/javac AESEncrypter.java
+
