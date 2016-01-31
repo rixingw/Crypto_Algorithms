@@ -77,14 +77,19 @@ public class StegoImage {
 		for (int y = 0; y < IH; y++){
       			for (int x = 0; x < IW; x++) {
       				String pixel = "";
-      				
+    
       				while(pixel.length() < 32){
-      					char bit = nextByte(b);
+      					counter += 7;
+					byte a = nextBit(b);
+					char bit = ' ';
+						if(a==0) bit = '0';	
+						else  bit = '1';
       					if (index%4!=0){
       						pixel += bit;
       					}
       					index++;
       				}
+
       				int rgb = Integer.parseUnsignedInt(pixel, 2);
       				hiddenImage.setRGB(x, y, rgb);
 			}
@@ -93,24 +98,7 @@ public class StegoImage {
 			return hiddenImage;
 	}
 	 
-	
-	public char nextByte(BufferedImage image){
-		String bitArray = "";
-		
-		while (bitArray.length() < 8){
-			if (moreImageData){
-				byte bit = nextBit(image);
-				bitArray += Integer.toBinaryString(bit);
-			
-			}else{
-				System.out.print("No more data");
-				break;
-			}
-		}
-		char last = bitArray.charAt(bitArray.length()-1);
-		return last;
 
-	}
 
 	/*
 	 * first write the Width, then the Height and then insert the number of bits per byte and then continue to fill in the rest of the first row unaltered.
