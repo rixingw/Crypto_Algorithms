@@ -42,7 +42,6 @@ public class StegoImage {
 		return (byte)rr;
 
 	}
-	
 
 	/*********************************************************************************************************
 	 * *******************************************************************************************************
@@ -59,104 +58,58 @@ public class StegoImage {
 	 * *******************************************************************************************************
 	 * *******************************************************************************************************
 	 *********************************************************************************************************/
-	private int getBitIn(int pixel, char color) {
-		int k = 0;
-		switch(color){
-			case 'a': k = 24;
-				break;
-			case 'r': k = 16;
-				break;
-			case 'g': k = 8;
-				break;
-			case 'b': k = 0;
-				break;
-			default:
-				System.exit(0);
-		}
-
-   		 return (pixel >> k) & 1;
-	}
-	// pixels[0] = alpha
-	private int reduce(int pixel){
-			int a = getBitIn(pixel, 'a');
-			int r = getBitIn(pixel, 'r');
-			int g = getBitIn(pixel, 'g');
-			int b = getBitIn(pixel, 'b');
-			int color = 0x00;
-			color = (a<<3) |(r<<2)| (g<<1) | (b<<0); 
-		
-		return color;
-	}
-	
-	private int map8to1(int[] pixels){
-		if (pixels.length != 8) {System.exit(0);}
-		//concat from left to right [0]...[8]
-		int pixel = 0x00000000;
-		int counter = 28;
-		for (int i = 0; i <8; i++){
-		pixel |= (reduce(pixels[i])<<counter);
-			counter -= 2;
-		}
-		return pixel;
-	}
-
-	private void debug(boolean error,String message){ if (error == true) { System.out.println(message); System.exit(0);}}
-
-	private int[] getAllPixelsInImage(BufferedImage image){
-		int w=image.getWidth();
-		int h=image.getHeight();
-		int IW = getImageHeaderW(image);
-		int IH = getImageHeaderH(image);
-		int target = IW * IH * 8;
-		System.out.println("target:" + target);
-		int index = 0;
-		int[] p = new int[target];
-		for (int y = 0; y <h; y++){
-			for (int x = 0; x<w; x++){
-				if (index < target){
-					int pixel = image.getRGB(x,y);
-					//image.setRGB(x,y, 0xffffffff);
-					p[index] = pixel;
-					index++;
-			
-				}
-			}
-		}
-		debug(p.length!=target, "Error, data size do not match");
-		return p;
-		
-	}
-
 	public BufferedImage showHiddenImage(BufferedImage b) {
 		int w=b.getWidth();
 		int h=b.getHeight();
-		
-		System.out.println("W = " + w + "  H = " + h);
-	
+
+
 		int IW = getImageHeaderW(b);
 		int IH = getImageHeaderH(b);
-		int n = getImageBitsinByte(b);	// number of hidden bits in a byte
-		
+		int n = getImageBitsinByte(b);	
 		if( IW <= 0 || IH <= 0 )
-			return null;                                                                            
-    		BufferedImage hiddenImage = new BufferedImage(IW, IH, b.getType());
-		int[] data = getAllPixelsInImage(b);
-		int counter = 0;				
-		for (int y = 1; y < IH; y++){
-			for(int x = 0; x < IW; x++){
-				int[] temp = new int[8];
-				for (int j = 0; j < 8; j++){
-					temp[j] = data[counter];
-					counter++;	
-				}
-				int pixel = map8to1(temp);
-				hiddenImage.setRGB(x,y, pixel);
-					
+			return null;
+		BufferedImage hiddenImage = new BufferedImage(IW, IH, b.getType());	// assume same type as the passed one.
+
+    		counter = w*32-1;
+    		moreImageData = true;
+    		int index = 0;
+
+		for (int y = 0; y < IH; y++){
+      			for (int x = 0; x < IW; x++) {
+      				String pixel = "";
+      				
+      				while(pixel.length() < 32){
+      					char bit = nextByte(b);
+      					if (index%4!=0){
+      						pixel += bit;
+      					}
+      					index++;
+      				}
+      				int rgb = Integer.parseUnsignedInt(pixel, 2);
+      				hiddenImage.setRGB(x, y, rgb);
 			}
-	
+      		
 		}
-		debug(data.length!=IW*IH*8, "Error, data size do not match");
-		return hiddenImage;
+			return hiddenImage;
+	}
+	 
+	
+	public char nextByte(BufferedImage image){
+		String bitArray = "";
+		
+		while (bitArray.length() < 8){
+			if (moreImageData){
+				byte bit = nextBit(image);
+				bitArray += Integer.toBinaryString(bit);
+			
+			}else{
+				System.out.print("No more data");
+				break;
+			}
+		}
+		char last = bitArray.charAt(bitArray.length()-1);
+		return last;
+
 	}
 
 	/*
