@@ -70,23 +70,29 @@ public class StegoImage {
 			return null;
 		BufferedImage hiddenImage = new BufferedImage(IW, IH, b.getType());	// assume same type as the passed one.
 
-    		counter = w*32-1;
-    		moreImageData = true;
-    		int index = 0;
-
+        counter = w*32-1;
+        moreImageData = true;
+        int index = 0;
 		for (int y = 0; y < IH; y++){
       			for (int x = 0; x < IW; x++) {
+                    
       				String pixel = "";
-    
+                    
       				while(pixel.length() < 32){
-      					counter += 7;
-					byte a = nextBit(b);
-					char bit = ' ';
-						if(a==0) bit = '0';	
-						else  bit = '1';
-      					if (index%4!=0){
-      						pixel += bit;
-      					}
+                        
+                        counter += 7;
+                        byte a = nextBit(b);
+                        
+                        char bit = ' ';
+                            if(a==0) {
+                                bit = '0';
+                            }else{
+                                bit = '1';
+                            }
+                
+                    if (index % 4!=0){
+                        pixel += bit;
+                    }
       					index++;
       				}
 

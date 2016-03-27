@@ -54,11 +54,11 @@ public class A2 {
 					GREEN |= 1 << 6;
 					BLUE |= 1 << 6;
 					// NEED TO IMPLEMENT (5)
-					RED ^= (-3 ^ RED) & (1 << 3);					
-					GREEN ^= (-3 ^ GREEN) & (1 << 3);			
-					BLUE ^= (-3 ^ BLUE) & (1 << 3);
+					RED &= ~(1 << 3);
+					GREEN &= ~(1 << 3);
+					BLUE &= ~(1 << 3);
 					// NEED TO IMPLEMENT (6) (replace the 0xffaa6633 value)
-					int new_rgb=(rgb & 0x00000000)|(alpha<<24) | (RED << 16) | (GREEN << 8) | (BLUE << 0);
+					int new_rgb=(rgb & 0x00000000)|(alpha<<24) | (BLUE << 16) | (RED << 8) | (GREEN << 0);
 
 
 					outI.setRGB(x,y,new_rgb); // set the pixel of the output image to new_rgb

@@ -3,7 +3,7 @@
 /*
         Rixing Wu
         1/26/2015
-        Lab 1
+        Lab 03
         COMP3571
 */
 
