@@ -332,12 +332,25 @@ public class RSA_WIT {
 		int w = 0;
 		byte[] buffer = new byte[NB];
 		try {
+
+			//************************************************************************///
+			// Ecrypt Header information
+			byte lbs = (byte)(in.available() % NB);
+			byte[] lbbytes = new byte[NB];
+			for (int i = 0; i < NB; i++){
+				lbbytes[i] = (byte)0;
+			}
+			lbbytes[0] = lbs;
+			BigInteger header = new BigInteger(1, lbbytes);
+			BigInteger e_header = encrypt(header);
+			Write_BigInteger_to_file(out,e_header);
+
+			//************************************************************************///
+
 			while( (w = in.read(buffer)) != 0 ) {
 				if( w == NB ) {
-      	      				BigInteger message = new BigInteger(1, buffer);
-              				BigInteger encrypt = encrypt(message);
-
-
+  	      				BigInteger message = new BigInteger(1, buffer);
+          				BigInteger encrypt = encrypt(message);
 					/*
               				BigInteger decrypt = decrypt(encrypt);
 
@@ -347,7 +360,6 @@ public class RSA_WIT {
               				System.out.println("\t (" + decrypt.bitLength() + " bits) decrypted = " + decrypt);
 	      				System.out.println();
 					*/
-
 
 	      				Write_BigInteger_to_file(out, encrypt);
 				}
@@ -361,7 +373,7 @@ public class RSA_WIT {
 	       		 	 	 * copy leftover from data array into t[] -  (pad goes in front)
 	       		 	 	 */
 	      				int j = 0;
-					byte [] t = new byte[NB];
+								byte [] t = new byte[NB];
 
 	      				//int padSize = NB -  (bytes.length % NB); // size of pad
 	      				int padSize = NB -  w; 			 // size of pad
@@ -371,14 +383,13 @@ public class RSA_WIT {
 
 
 	      				for(int i=0; i < w; i++, j++) {	// copy data into t[]
-		        			//System.out.println("To assign in t[" + j + "] <- buffer["+i+"]");
+		        		//	System.out.println("To assign in t[" + j + "] <- buffer["+i+"]");
 	      					t[j] = buffer[i];
 	      				}
 
 
       	      				BigInteger message = new BigInteger(1, t);
               				BigInteger encrypt = encrypt(message);
-
 					/*
               				BigInteger decrypt = decrypt(encrypt);
 
@@ -431,8 +442,8 @@ public class RSA_WIT {
 		// Open the input and output files
 		//
       		try {
-			out = new FileOutputStream(new File(outfile));
-      			in = new FileInputStream(new File(fname));
+							out = new FileOutputStream(new File(outfile));
+      				in = new FileInputStream(new File(fname));
       		}
       		catch(IOException e) {
 	      		System.err.println(e);
@@ -440,68 +451,90 @@ public class RSA_WIT {
       		}
 
 
+
+
 		int ss = modulus.bitLength()/8 + 1;	// calculate how many BYTES the module is (ss).
       		byte [] tr = new byte[ss];		// modulus is 5 bytes (40 bits) - need one more byte
 							// tr will hold (ss) number of bytes from the encrypted file.
       		try {
-			int ret = -1;
+						//System.out.println("available : " + in.available());
+						//************************************************************************///
+						// Decrypt Header information
+						byte[] fblock = new byte[ss];
+						int fsize = in.read(fblock);
+						BigInteger e_header = new BigInteger(fblock);
+						BigInteger d_header = decrypt(e_header);
+						fblock = d_header.toByteArray();
+						int  fmd = (int)fblock[0];
+						//System.out.println("Remining : " + fmd);
+						//************************************************************************///
+					//	System.out.println("available : " + in.available());
+
+						int ret = -1;
       			while ( (ret = in.read(tr)) == ss ) {	// go in a loop and read (ss) number of bytes from the encrypted file.
-	      			BigInteger enc = new BigInteger(tr);	// convert the encrypted bytes into a BigInteger
-              			BigInteger decrypt = decrypt(enc);	// Decrypt data
+					      			BigInteger enc = new BigInteger(tr);	// convert the encrypted bytes into a BigInteger
+				              BigInteger decrypt = decrypt(enc);	// Decrypt data
+											byte[] data = decrypt.toByteArray();	// Convert the decrypted BigInteger into an array of bytes
+										if( data.length > NB ) {				// dump only the last NB bytes
+															byte[] gg = new byte[NB];			// we encrypted the file using NB number of bytes
+															// (now we ended up with data.length number of bytes)
+															// We will use only the last NB number of bytes.
+															// *****  TODO *****
+															//
+															// Copy the last NB number of bytes from the data[] into the gg[]
+															for(int r=0; r<NB; r++)	gg[r] = (byte)0;	// initialize array to all 0s
+															int j = NB-1;
+															for (int i = data.length-1; j >= 0; i--){
+																	gg[j] = data[i];
+																	j--;
+															}
 
-				byte[] data = decrypt.toByteArray();	// Convert the decrypted BigInteger into an array of bytes
+												out.write(gg);					// dump gg[] into the output file (these are the decrypted bytes.
 
+											}
+											else if( data.length == NB ) {				// dump all data
+												out.write(data);
+											}
+											else {
+																if( in.available() > 0 ) {	// if there is more data in the encrypted file,
+																	//
+																	// *****  TODO *****
+																	//
+																	// Create an array that can hold NB number of bytes
+																	// Initialize the array with 0s
+																	// Copy the last NB number of bytes from data[] into the newly created array.
+																	// Dump the newly created array into the file.
 
-				if( data.length > NB ) {				// dump only the last NB bytes
-					byte[] gg = new byte[NB];			// we encrypted the file using NB number of bytes
-											// (now we ended up with data.length number of bytes)
-											// We will use only the last NB number of bytes.
-					for(int r=0; r<NB; r++)	gg[r] = (byte)0;	// initialize array to all 0s
-
-
-					//
-					// *****  TODO *****
-					//
-					// Copy the last NB number of bytes from the data[] into the gg[]
-						int j = 3;
-						for (int i = data.length-1; j >= 0; i--){
-							gg[j] = data[i];
-							j--;
-						}
-
-
-					out.write(gg);					// dump gg[] into the output file (these are the decrypted bytes.
-				}
-				else if( data.length == NB ) {				// dump all data
-					out.write(data);
-				}
-				else {
-
-
-					if( in.available() > 0 ) {	// if there is more data in the encrypted file,
-						//
-						// *****  TODO *****
-						//
-						// Create an array that can hold NB number of bytes
-						// Initialize the array with 0s
-						// Copy the last NB number of bytes from data[] into the newly created array.
-						// Dump the newly created array into the file.
-						byte[] gg = new byte[NB];
-						for(int r=0; r<NB; r++)	gg[r] = (byte)0;	// initialize array to all 0s
-
-							int j = 3;
-							for (int i = data.length-1; i >= 0; i--){
-								gg[j] = data[i];
-								j--;
-							}
+																	 byte[] gg = new byte[NB];
+																	for(int r=0; r<NB; r++)	gg[r] = (byte)0;	// initialize array to all 0s
+																		int j = data.length-1;
+																		for (int i = NB-1; j >= 0; i--){
+																			gg[i] = data[j];
+																			j--;
+																		}
 
 
-						out.write(gg);
-					}
-					else {
-						out.write(data);	// this is last thing we read
-					}
-				}
+																	out.write(gg);
+																}
+																else {
+																//
+																 byte[] gg = new byte[fmd];
+																for (int r = 0; r < fmd; r++) {
+																	gg[r] = (byte)0;
+																}
+																//	System.out.println("fmd:" + fmd);
+																//	System.out.println("data " + data.length);
+																	int j = data.length - 1;
+																for (int i = fmd-1; i>=0; i--){
+																				gg[i] = data[j];
+																 				System.out.println("gg [" + i + "] <-- data [" + j + "]" );
+																				j--;
+																				if (j < 0){break;}
+																}
+
+																	out.write(gg);	// this is last thing we read
+													}
+											}
       			}
       		}
       		catch(IOException ioe) {
